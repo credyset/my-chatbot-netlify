@@ -1,4 +1,3 @@
-// netlify/functions/chat-proxy.js
 // Node 18 already provides global `fetch`, so no import needed.
 
 export default async (req, context) => {
