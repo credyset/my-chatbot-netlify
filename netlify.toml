@@ -1,0 +1,8 @@
+# netlify.toml  ── lives at repo root
+[functions]
+# Path **relative to the repo root** containing all serverless functions
+directory = "netlify/functions"
+
+# (optional) Node version for the function runtime  
+# [node]  
+#   version = "18"
