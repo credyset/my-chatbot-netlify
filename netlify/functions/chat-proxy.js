@@ -1,29 +1,34 @@
-// Node 18 already provides global `fetch`, so no import needed.
+import fetch from "node-fetch";
 
-export default async (req, context) => {
-  try {
-    // Netlify’s ES-module functions have Request-like `req`
-    const { message = "Ping?" } = await req.json();
+export default async (req) => {
+  // 👈 ★ NEW  — accept the id sent by the browser
+  const { message, assistant } = await req.json();
 
-    // *** call OpenAI (or just echo for smoke-test) ***
-    // const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {/*…*/});
-    // const { choices } = await aiResp.json();
-    // const reply = choices?.[0]?.message?.content || "No reply";
+  // fallback for manual tests without a query-param
+  const ASSISTANT_ID = assistant || process.env.DEFAULT_ASSISTANT_ID;
 
-    const reply = "Hello from Logic Agency, how are you?";
+  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    method : "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type":  "application/json",
+      "OpenAI-Beta":   "assistants=v2"
+    },
+    body: JSON.stringify({
+      model     : "gpt-4o-mini",
+      assistant : ASSISTANT_ID,
+      messages  : [{ role: "user", content: message }]
+    })
+  });
 
-    return new Response(
-      JSON.stringify({ reply }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+  const data  = await resp.json();
+  const reply = data.choices?.[0]?.message?.content ?? "No response";
 
-  } catch (err) {
-    console.error(err);
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
+  return new Response(JSON.stringify({ reply }), {
+    status : 200,
+    headers: { "Content-Type": "application/json" }
+  });
 };
+
 
 
