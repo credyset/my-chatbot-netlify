@@ -1,8 +1,8 @@
 {
   "name": "chat-proxy",
   "version": "1.0.0",
-  "type": "module",          // ≤ keeps ESM syntax if you want it
-  "dependencies": {          //  REMOVE node-fetch here
+  "type": "module",         
+  "dependencies": {          
   }
 }
 
