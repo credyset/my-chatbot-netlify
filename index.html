@@ -1,38 +1,15 @@
-<!-- index.html -->
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Logic Agency Chat</title>
-</head>
-<body>
-  <h1>Logic Agency Assistant</h1>
+<script>
+const url          = new URL(window.location.href);
+const assistantId  = url.searchParams.get("aid");   // ?aid=asst_123
 
-  <form id="chatForm">
-    <input id="userInput" placeholder="Ask me anything…" size="50" />
-    <button type="submit">Send</button>
-  </form>
-
-  <pre id="output"></pre>
-
-  <script>
-    const form   = document.getElementById('chatForm');
-    const input  = document.getElementById('userInput');
-    const output = document.getElementById('output');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      output.textContent = '…thinking…';
-
-      const resp  = await fetch('/.netlify/functions/chat-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input.value })
-      });
-      const data  = await resp.json();
-      output.textContent = data.reply || JSON.stringify(data);
-      input.value = '';
-    });
-  </script>
-</body>
-</html>
+async function send() {
+  const txt   = document.querySelector("#msg").value;
+  const resp  = await fetch("/.netlify/functions/chat-proxy", {
+    method : "POST",
+    headers: { "Content-Type": "application/json" },
+    body   : JSON.stringify({ message: txt, assistant: assistantId }) // 👈
+  });
+  const json  = await resp.json();
+  document.querySelector("#out").textContent = json.reply;
+}
+</script>
