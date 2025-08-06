@@ -1,15 +1,56 @@
-<script>
-const url          = new URL(window.location.href);
-const assistantId  = url.searchParams.get("aid");   // ?aid=asst_123
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Logic Agency Assistant</title>
+  <style>
+    body{font-family:system-ui;padding:2rem;}
+    h1{margin-top:0}
+    input{padding:.4rem;font-size:1rem;width:60%}
+    button{padding:.45rem 1rem;font-size:1rem;margin-left:.3rem}
+    pre{white-space:pre-wrap;margin-top:1.5rem}
+  </style>
+</head>
+<body>
 
-async function send() {
-  const txt   = document.querySelector("#msg").value;
-  const resp  = await fetch("/.netlify/functions/chat-proxy", {
-    method : "POST",
-    headers: { "Content-Type": "application/json" },
-    body   : JSON.stringify({ message: txt, assistant: assistantId }) // 👈
-  });
-  const json  = await resp.json();
-  document.querySelector("#out").textContent = json.reply;
-}
-</script>
+  <h1>Logic Agency Assistant</h1>
+
+  <input id="msg" placeholder="Ask me anything…">
+  <button onclick="send()">Send</button>
+
+  <pre id="out"></pre>
+
+  <!-- put the script AFTER the markup so elements exist -->
+  <script>
+  /* -------- helper to read ?aid=asst_xxx -------- */
+  const url         = new URL(window.location.href);
+  const assistantId = url.searchParams.get("aid");   // ?aid=asst_123
+
+  /* show a warning if someone loads the page without the param */
+  if (!assistantId) {
+    document.querySelector("#out").textContent =
+      "⚠️  Add ?aid=YOUR_ASSISTANT_ID to the URL.";
+  }
+
+  /* main send() handler – the button’s onclick */
+  async function send () {
+    const txt = document.querySelector("#msg").value.trim();
+    if (!txt) return;
+
+    const resp = await fetch("/.netlify/functions/chat-proxy", {
+      method : "POST",
+      headers: { "Content-Type": "application/json" },
+      body   : JSON.stringify({
+        message  : txt,
+        assistant: assistantId            // ← comes from the URL
+      })
+    });
+
+    const data  = await resp.json();
+    document.querySelector("#out").textContent =
+      data.reply || data.error || "⚠️  No response";
+  }
+  </script>
+</body>
+</html>
+
