@@ -1,71 +1,30 @@
 // netlify/functions/chat-proxy.js
-import fetch from "node-fetch";
+// Node 18 already provides global `fetch`, so no import needed.
 
-export const handler = async (event, context) => {
+export default async (req, context) => {
   try {
-    // ---------------------------
-    // 1️⃣  Figure out what the user sent
-    // ---------------------------
-    const isGet      = event.httpMethod === "GET";
-    const body       = event.body ? JSON.parse(event.body) : {};
-    const userInput  = body.message;
+    // Netlify’s ES-module functions have Request-like `req`
+    const { message = "Ping?" } = await req.json();
 
-    // ---------------------------
-    // 2️⃣  If no message (GET or empty POST) → return default greeting
-    // ---------------------------
-    if (isGet || !userInput) {
-      return {
-        statusCode: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reply: "Hello from Logic Agency, how are you?"
-        })
-      };
-    }
+    // *** call OpenAI (or just echo for smoke-test) ***
+    // const aiResp = await fetch("https://api.openai.com/v1/chat/completions", {/*…*/});
+    // const { choices } = await aiResp.json();
+    // const reply = choices?.[0]?.message?.content || "No reply";
 
-    // ---------------------------
-    // 3️⃣  Otherwise call the Assistants API
-    //     – make sure you’ve created the assistant first
-    //     – store OPENAI_API_KEY in Netlify → Site Settings → Environment Variables
-    // ---------------------------
-    const openaiResp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type":  "application/json",
-        "OpenAI-Beta":   "assistants=v2"          // necessary for Assistants
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        assistant: "your-assistant-id",           // ← paste the ID you got from Zapier
-        messages: [{ role: "user", content: userInput }]
-      })
-    });
+    const reply = "Hello from Logic Agency, how are you?";
 
-    if (!openaiResp.ok) {
-      const errText = await openaiResp.text();
-      throw new Error(`OpenAI error ${openaiResp.status}: ${errText}`);
-    }
-
-    const data  = await openaiResp.json();
-    const reply = data.choices?.[0]?.message?.content ?? "Sorry, no response 😕";
-
-    // ---------------------------
-    // 4️⃣  Send the assistant’s reply back to the caller
-    // ---------------------------
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reply })
-    };
+    return new Response(
+      JSON.stringify({ reply }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
 
   } catch (err) {
     console.error(err);
-    return {
-      statusCode: 500,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: err.message })
-    };
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 };
+
 
